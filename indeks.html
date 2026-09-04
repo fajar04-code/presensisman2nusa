@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi Kehadiran SMAN 2 Nusa - Buka Tautan Massal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-school text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Presensi Kehadiran SMAN 2 Nusa</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Portal buka banyak tautan presensi/link sekaligus dalam sekejap</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Ganti Tema">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6 overflow-y-auto">
+
+        <!-- Notification Banner / Modal Custom -->
+        <div id="alertBox" class="hidden bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 px-4 py-3 rounded-xl flex items-center justify-between text-sm shadow-sm">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="alertText">Pesan peringatan di sini.</span>
+            </div>
+            <button onclick="hideAlert()" class="text-amber-600 hover:text-amber-800 dark:text-amber-400 font-bold">&times;</button>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <label for="urlInput" class="font-semibold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-list-ul text-indigo-500"></i> Daftar Tautan Presensi / Kelas
+                </label>
+                <div class="text-xs text-gray-400">
+                    Satu tautan per baris atau dipisah spasi/koma
+                </div>
+            </div>
+
+            <textarea id="urlInput" rows="6" placeholder="https://forms.gle/contoh1&#10;https://forms.gle/contoh2&#10;https://forms.gle/contoh3" class="w-full p-3.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono transition"></textarea>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span id="linkCountBadge" class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full font-bold">0 Tautan</span> terdeteksi
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="clearInput()" class="px-4 py-2 text-sm font-medium rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center gap-2">
+                        <i class="fa-solid fa-trash text-gray-400"></i> Bersihkan
+                    </button>
+                    <button onclick="processAndOpen()" class="px-5 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-rocket"></i> Buka Semua Tautan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parsed Links / Manager Section -->
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col gap-4 flex-1">
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-globe text-indigo-500"></i> Hasil Ekstraksi Tautan
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="copyAllLinks()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                        <i class="fa-regular fa-copy"></i> Salin Semua
+                    </button>
+                </div>
+            </div>
+
+            <div id="linkListContainer" class="flex-1 min-h-[150px] max-h-[300px] overflow-y-auto border border-gray-100 dark:border-gray-700 rounded-xl p-3 bg-gray-50/50 dark:bg-gray-900/50 divide-y divide-gray-100 dark:divide-gray-800">
+                <div class="text-center py-10 text-gray-400 dark:text-gray-500 text-sm">
+                    Belum ada tautan yang dimasukkan. Tempel tautan presensi Anda di atas lalu klik proses.
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700">
+        Presensi Kehadiran SMAN 2 Nusa &bull; Sistem Pengelola Tautan Massal
+    </footer>
+
+    <!-- Script Logika -->
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const linkListContainer = document.getElementById('linkListContainer');
+        const linkCountBadge = document.getElementById('linkCountBadge');
+        const alertBox = document.getElementById('alertBox');
+        const alertText = document.getElementById('alertText');
+
+        let currentLinks = [];
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // Listener input untuk update jumlah tautan secara real-time
+        urlInput.addEventListener('input', parseLinks);
+
+        function parseLinks() {
+            const rawText = urlInput.value;
+            const lines = rawText.split(/[\s,\n]+/);
+            
+            currentLinks = lines.filter(item => {
+                const trimmed = item.trim();
+                return trimmed.length > 0;
+            });
+
+            linkCountBadge.textContent = `${currentLinks.length} Tautan`;
+            renderLinkList();
+        }
+
+        function renderLinkList() {
+            if (currentLinks.length === 0) {
+                linkListContainer.innerHTML = `
+                    <div class="text-center py-10 text-gray-400 dark:text-gray-500 text-sm">
+                        Belum ada tautan yang dimasukkan. Tempel tautan presensi Anda di atas lalu klik proses.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            currentLinks.forEach((link, index) => {
+                let formattedUrl = link;
+                if (!/^https?:\/\//i.test(link)) {
+                    formattedUrl = 'https://' + link;
+                }
+
+                html += `
+                    <div class="py-2.5 px-3 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/60 rounded-lg transition">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <span class="text-xs text-gray-400 font-mono w-6 text-right">${index + 1}.</span>
+                            <a href="${formattedUrl}" target="_blank" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline truncate">${link}</a>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <a href="${formattedUrl}" target="_blank" class="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition" title="Buka Tab Ini">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            linkListContainer.innerHTML = html;
+        }
+
+        function clearInput() {
+            urlInput.value = '';
+            currentLinks = [];
+            parseLinks();
+        }
+
+        function processAndOpen() {
+            if (currentLinks.length === 0) {
+                showAlert('Harap masukkan setidaknya satu tautan terlebih dahulu!');
+                return;
+            }
+
+            // Membuka dengan jeda waktu kecil (delay) agar aman dari pembatasan browser
+            let index = 0;
+            function openNext() {
+                if (index < currentLinks.length) {
+                    let link = currentLinks[index];
+                    let formattedUrl = link;
+                    if (!/^https?:\/\//i.test(link)) {
+                        formattedUrl = 'https://' + link;
+                    }
+                    
+                    window.open(formattedUrl, '_blank');
+                    index++;
+                    
+                    // Jeda 250ms setiap pembukaan tab berikutnya
+                    setTimeout(openNext, 250);
+                }
+            }
+
+            openNext();
+        }
+
+        function copyAllLinks() {
+            if (currentLinks.length === 0) {
+                showAlert('Tidak ada tautan untuk disalin.');
+                return;
+            }
+            const textToCopy = currentLinks.join('\n');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showAlert('Semua tautan berhasil disalin ke papan klip!');
+                }).catch(() => {
+                    copyLegacy(textToCopy);
+                });
+            } else {
+                copyLegacy(textToCopy);
+            }
+        }
+
+        function copyLegacy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showAlert('Semua tautan berhasil disalin ke papan klip!');
+            } catch (err) {
+                showAlert('Gagal menyalin tautan.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showAlert(msg) {
+            alertText.textContent = msg;
+            alertBox.classList.remove('hidden');
+            setTimeout(() => {
+                hideAlert();
+            }, 5000);
+        }
+
+        function hideAlert() {
+            alertBox.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
